@@ -245,12 +245,37 @@ class Document:
             self.original_filepath = os.path.join(os.getcwd(), filepath)
 
         if svg_string is not None:
-            self.tree = etree.ElementTree(etree.fromstring(svg_string))
+            parser = etree.XMLParser(encoding="utf-8")
+            svg_string = self.__ampersand_xml_attributes_fix(svg_string)
+            self.tree = etree.ElementTree(etree.fromstring(svg_string, parser=parser))
         else:
             # parse svg to ElementTree object
             self.tree = etree.parse(filepath)
 
         self.root = self.tree.getroot()
+
+
+    def __ampersand_xml_attributes_fix(self, xml_string):
+        """
+        Ampersand XML attribute values containing '&' characters by replacing them with '&amp;'.
+
+        Args:
+            xml_string (str): The input XML string with potentially problematic attribute values.
+
+        Returns:
+            str: The XML string with fixed attribute values.
+        """
+        def replace_amp(match):
+            return match.group().replace("&", "&amp;")
+        
+        # Regular expression pattern to match attribute values containing '&' characters
+        pattern = r'(?<=[\'"])[^\'"]*(&)[^\'"]*(?=[\'"])'
+        
+        # Use the regular expression pattern to find and replace '&' characters
+        fixed_xml = re.sub(pattern, replace_amp, xml_string)
+        
+        return fixed_xml
+
 
     def paths(self, group_filter=lambda x: True,
               path_filter=lambda x: True, path_conversions=CONVERSIONS):
